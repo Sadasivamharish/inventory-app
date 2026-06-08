@@ -29,11 +29,14 @@ app.get("/api/test-db", (req, res) => {
 app.post("/api/items", (req, res) => {
 
     const {
-        name,
-        purchase_date,
-        stock_available,
-        item_type_id
-    } = req.body;
+    name,
+    purchase_date,
+    stock_available,
+    stock_quantity,
+    item_type_id
+} = req.body;
+
+    console.log(req.body);
 
     // Validation
     if (!name || !purchase_date || !item_type_id) {
@@ -43,14 +46,26 @@ app.post("/api/items", (req, res) => {
     }
 
     const sql = `
-        INSERT INTO items
-        (name, purchase_date, stock_available, item_type_id)
-        VALUES (?, ?, ?, ?)
-    `;
+    INSERT INTO items
+    (
+        name,
+        purchase_date,
+        stock_available,
+        stock_quantity,
+        item_type_id
+    )
+    VALUES (?, ?, ?, ?, ?)
+`;
 
     db.query(
-        sql,
-        [name, purchase_date, stock_available, item_type_id],
+    sql,
+    [
+        name,
+        purchase_date,
+        stock_available,
+        stock_quantity,
+        item_type_id
+    ],
         (err, result) => {
 
             if (err) {
@@ -70,11 +85,12 @@ app.get("/api/items", (req, res) => {
 
     const sql = `
         SELECT
-            items.id,
-            items.name,
-            DATE_FORMAT(items.purchase_date, '%Y-%m-%d') AS purchase_date,
-            items.stock_available,
-            item_types.type_name
+    items.id,
+    items.name,
+    DATE_FORMAT(items.purchase_date, '%Y-%m-%d') AS purchase_date,
+    items.stock_available,
+    items.stock_quantity,
+    item_types.type_name
         FROM items
         JOIN item_types
         ON items.item_type_id = item_types.id
@@ -121,26 +137,29 @@ app.put("/api/items/:id", (req, res) => {
     const id = req.params.id;
 
     const {
+    name,
+    purchase_date,
+    stock_available,
+    stock_quantity,
+    item_type_id
+} = req.body;
+
+    db.query(
+    `UPDATE items
+     SET name=?,
+         purchase_date=?,
+         stock_available=?,
+         stock_quantity=?,
+         item_type_id=?
+     WHERE id=?`,
+    [
         name,
         purchase_date,
         stock_available,
-        item_type_id
-    } = req.body;
-
-    db.query(
-        `UPDATE items
-         SET name=?,
-             purchase_date=?,
-             stock_available=?,
-             item_type_id=?
-         WHERE id=?`,
-        [
-            name,
-            purchase_date,
-            stock_available,
-            item_type_id,
-            id
-        ],
+        stock_quantity,
+        item_type_id,
+        id
+    ],
         (err, result) => {
 
             if (err) {
@@ -151,6 +170,57 @@ app.put("/api/items/:id", (req, res) => {
 
             res.json({
                 message: "Item Updated Successfully"
+            });
+
+        }
+    );
+
+});
+
+app.post("/api/purchase", (req, res) => {
+
+    const { items } = req.body;
+
+    db.query(
+        "INSERT INTO purchases (purchase_date) VALUES (CURDATE())",
+        (err, purchaseResult) => {
+
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            const purchaseId = purchaseResult.insertId;
+
+            items.forEach(item => {
+
+                db.query(
+                    `INSERT INTO purchase_items
+                    (purchase_id, item_id, quantity)
+                    VALUES (?, ?, ?)`,
+                    [
+                        purchaseId,
+                        item.item_id,
+                        item.quantity
+                    ]
+                );
+
+                db.query(
+                    `UPDATE items
+                     SET stock_quantity =
+                     stock_quantity - ?
+                     WHERE id = ?`,
+                    [
+                        item.quantity,
+                        item.item_id
+                    ]
+                );
+
+            });
+
+            res.json({
+                message: "Purchase Completed"
             });
 
         }

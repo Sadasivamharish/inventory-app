@@ -30,6 +30,13 @@
             <div class="checkbox">
                 <input type="checkbox" id="stockAvailable">
                 <label for="stockAvailable">Stock Available</label>
+                <label>Stock Quantity</label>
+<input
+    type="number"
+    id="stockQuantity"
+    min="0"
+    required
+>
             </div>
 
             <button type="submit">Submit</button>
@@ -44,10 +51,29 @@
                     <th>Item Name</th>
                     <th>Item Type</th>
                     <th>Purchase Date</th>
-                    <th>Stock</th>
+                    <th>Stock Available</th>
+                    <th>Stock Quantity</th>
                     <th>Actions</th>
                 </tr>
             </thead>
+
+        <h3>Purchase Item</h3>
+
+<select id="purchaseItem">
+    <option value="">Select Item</option>
+</select>
+
+<input
+    type="number"
+    id="purchaseQty"
+    placeholder="Quantity"
+    min="1"
+>
+
+<button type="button" onclick="purchaseItem()">
+    Purchase
+</button>
+
 
             <tbody id="tableBody">
                 <tr>

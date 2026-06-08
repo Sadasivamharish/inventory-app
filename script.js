@@ -4,11 +4,12 @@ document.getElementById("itemForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const data = {
-        name: document.getElementById("itemName").value,
-        purchase_date: document.getElementById("purchaseDate").value,
-        stock_available: document.getElementById("stockAvailable").checked,
-        item_type_id: document.getElementById("itemType").value
-    };
+    name: document.getElementById("itemName").value,
+    purchase_date: document.getElementById("purchaseDate").value,
+    stock_available: document.getElementById("stockAvailable").checked,
+    stock_quantity: document.getElementById("stockQuantity").value,
+    item_type_id: document.getElementById("itemType").value
+};
 
     try {
 
@@ -50,6 +51,21 @@ async function loadItems() {
     );
 
     const items = await response.json();
+    const purchaseDropdown =
+    document.getElementById("purchaseItem");
+
+purchaseDropdown.innerHTML =
+    '<option value="">Select Item</option>';
+
+items.forEach(item => {
+
+    purchaseDropdown.innerHTML += `
+        <option value="${item.id}">
+            ${item.name}
+        </option>
+    `;
+
+});
 
     const tableBody =
         document.getElementById("tableBody");
@@ -64,6 +80,7 @@ async function loadItems() {
                 <td>${item.type_name}</td>
                 <td>${new Date(item.purchase_date).toLocaleDateString("en-GB")}</td>
                 <td>${item.stock_available ? "Yes" : "No"}</td>
+<td>${item.stock_quantity}</td>
                 <td>
     <button onclick="editItem(${item.id},
     '${item.name}',
@@ -128,4 +145,37 @@ function editItem(
     if (typeName === "Clothing")
         itemType.value = "3";
 
+}
+
+async function purchaseItem() {
+
+    const itemId =
+        document.getElementById("purchaseItem").value;
+
+    const quantity =
+        document.getElementById("purchaseQty").value;
+
+    const response = await fetch(
+        "http://localhost:5000/api/purchase",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                items: [
+                    {
+                        item_id: itemId,
+                        quantity: quantity
+                    }
+                ]
+            })
+        }
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    loadItems();
 }
